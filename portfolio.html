@@ -593,6 +593,7 @@
 
 <script>
 const API='d8f0lt9r01qub7kfa8egd8f0lt9r01qub7kfa8f0';
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbz1S3gg4n7ghtsWzUwgcxWzOEdpu6ecdkz2aLRW2xNv_yzrI58FmqD_dV1dMygWzUpTrg/exec';
 let prices={},allNews=[],currentFilter='all',txFilter='all',currency='USD',usdTryRate=1;
 
 const DATA={
@@ -983,8 +984,39 @@ setTimeout(()=>{
 }, 500);
 
 async function submitTransaction(){
-  showStatus('✅ Saved! (Google Sheets sync available in Xcode version)', 'success');
-  setTimeout(()=>closeAdd(), 1500);
+  const date = document.getElementById('inp-date').value;
+  const symbol = document.getElementById('inp-symbol').value.trim();
+  const shares = parseFloat(document.getElementById('inp-shares').value)||0;
+  const price = parseFloat(document.getElementById('inp-price').value)||0;
+
+  const isTrade = selectedType==='BUY'||selectedType==='SELL';
+  const isDiv = selectedType==='DIV';
+  const isCash = selectedType==='PERSONAL'||selectedType==='COMPANY';
+
+  if(!date){showStatus('Please enter a date','error');return;}
+  if((isTrade||isDiv)&&!symbol){showStatus('Please enter a symbol','error');return;}
+  if(isTrade&&shares<=0){showStatus('Please enter shares','error');return;}
+  if(price<=0&&!isCash){showStatus('Please enter price','error');return;}
+
+  showStatus('Saving to Google Sheets...','loading');
+
+  const sheet = selectedAccount==='CHASE' ? 'CHASE' : 'Fidelity';
+  let row;
+  if(isTrade){
+    row = [symbol, '', date, price, shares, shares*price, 'Cash'];
+  } else if(isDiv){
+    row = ['Dividend', symbol, date, '', '', price, 'Cash'];
+  } else {
+    row = [selectedType==='PERSONAL'?'Personal':'Company', '', date, price, '', '', 'Cash'];
+  }
+
+  const ok = await submitToSheets(sheet, row);
+  if(ok){
+    showStatus('✅ Saved to Google Sheets!','success');
+    setTimeout(()=>{closeAdd();refreshAll();fetchSheetsData();}, 1500);
+  } else {
+    showStatus('❌ Error saving. Try again.','error');
+  }
 }
 
 function showStatus(msg, type){
@@ -1168,7 +1200,60 @@ function deleteAlarm(id){
 // Check alarms every minute
 setInterval(()=>{ if(watchlist.length>0) fetchWatchPrices(); }, 60000);
 
-updateMarket();setInterval(updateMarket,60000);refreshAll();loadSavedAccounts();fetchWatchPrices();
+
+// ─── GOOGLE SHEETS ──────────────────────────────────────
+async function fetchSheetsData() {
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=summary');
+    const json = await res.json();
+    if (json.success && json.data) {
+      const d = json.data;
+      // Summary data güncelle
+      DATA.summaryData = {
+        fPersonal:    d.fPersonal    || DATA.summaryData.fPersonal,
+        cPersonal:    d.cPersonal    || DATA.summaryData.cPersonal,
+        metal:        d.metal        || DATA.summaryData.metal,
+        turkish:      d.turkish      || DATA.summaryData.turkish,
+        bofa:         d.bofa         || DATA.summaryData.bofa,
+        fCompany:     d.fCompany     || DATA.summaryData.fCompany,
+        cCompany:     d.cCompany     || DATA.summaryData.cCompany,
+        companyTotal: d.companyTotal || DATA.summaryData.companyTotal,
+        usTotal:      d.usTotal      || DATA.summaryData.usTotal,
+        usProfit:     d.usProfit     || DATA.summaryData.usProfit,
+        fTrade:       d.fTrade       || DATA.summaryData.fTrade,
+        cTrade:       d.cTrade       || DATA.summaryData.cTrade,
+        tradeTotal:   d.tradeTotal   || DATA.summaryData.tradeTotal,
+      };
+      // Fidelity & Chase totals
+      if (d.fidelityTotal) DATA.sheetsTotals.fidelityTotal = d.fidelityTotal;
+      if (d.fidelityGain)  DATA.sheetsTotals.fidelityGain  = d.fidelityGain;
+      if (d.chaseTotal)    DATA.sheetsTotals.chaseTotal     = d.chaseTotal;
+      if (d.chaseGain)     DATA.sheetsTotals.chaseGain      = d.chaseGain;
+      renderSummaryBreakdown();
+      console.log('Sheets data loaded OK');
+    }
+  } catch(e) {
+    console.log('Sheets fetch error:', e);
+  }
+}
+
+async function submitToSheets(sheetName, row) {
+  try {
+    const params = new URLSearchParams({
+      action: 'append',
+      sheet: sheetName,
+      row: JSON.stringify(row)
+    });
+    const res = await fetch(SCRIPT_URL + '?' + params.toString());
+    const json = await res.json();
+    return json.success;
+  } catch(e) {
+    console.log('Sheets write error:', e);
+    return false;
+  }
+}
+
+updateMarket();setInterval(updateMarket,60000);refreshAll();loadSavedAccounts();fetchWatchPrices();fetchSheetsData();
 </script>
 </body>
 </html>
