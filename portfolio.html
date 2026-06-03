@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--card:#111118;--card2:#16161f;--border:#1e1e2e;--cyan:#00d4ff;--green:#00e676;--red:#ff4444;--gold:#ffd700;--gray:#666680;--text:#e8e8f0;--text2:#9999b0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+.app{display:flex;flex-direction:column;height:100dvh}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:10px 16px 8px;flex-shrink:0}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.header-title{font-size:18px;font-weight:700;color:var(--cyan);letter-spacing:-0.5px}
+.market-bar{display:flex;justify-content:space-between;align-items:center}
+.market-status{display:flex;align-items:center;gap:6px;font-size:12px}
+.market-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.market-dot.closed{background:var(--red);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.market-countdown{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);font-weight:500}
+.fx-rate{font-size:11px;color:var(--text2)}
+.currency-toggle{background:var(--border);border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;cursor:pointer}
+.currency-toggle.active{background:var(--cyan);color:#000}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin:0 12px 10px}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--card2);border-radius:10px;padding:10px 12px}
+.metric-label{font-size:10px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.metric-value{font-size:20px;font-weight:700;font-family:'DM Mono',monospace}
+.metric-value.big{font-size:24px}
+.metric-value.pos{color:var(--green)}
+.metric-value.neg{color:var(--red)}
+.metric-value.cyan{color:var(--cyan)}
+.metric-value.gold{color:var(--gold)}
+.metric-full{grid-column:1/-1}
+.pos-table{width:100%;border-collapse:collapse;font-size:13px}
+.pos-table th{font-size:10px;color:var(--text2);font-weight:600;text-align:right;padding:4px 6px;text-transform:uppercase;letter-spacing:0.5px}
+.pos-table th:first-child{text-align:left}
+.pos-table td{padding:8px 6px;border-top:1px solid var(--border);text-align:right;font-family:'DM Mono',monospace;font-size:13px}
+.pos-table td:first-child{text-align:left;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px}
+.pos-table .sub{font-size:11px;color:var(--text2);font-family:'DM Sans',sans-serif;font-weight:400}
+.tx-filters{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px}
+.tx-filter{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.tx-filter.active{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:600}
+.tx-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.tx-symbol{font-weight:700;font-size:15px}
+.tx-meta{font-size:11px;color:var(--text2)}
+.tx-amount{font-family:'DM Mono',monospace;font-size:14px;font-weight:600}
+.tx-shares{font-size:11px;color:var(--text2);font-family:'DM Mono',monospace}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.badge.buy{background:rgba(0,230,118,0.15);color:var(--green)}
+.badge.sell{background:rgba(255,68,68,0.15);color:var(--red)}
+.badge.dividend{background:rgba(255,215,0,0.15);color:var(--gold)}
+.wl-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.wl-symbol{font-weight:700;font-size:15px}
+.wl-note{font-size:11px;color:var(--text2)}
+.wl-price{font-family:'DM Mono',monospace;font-size:16px;font-weight:600}
+.add-btn{display:flex;align-items:center;gap:6px;background:var(--cyan);color:#000;border:none;border-radius:10px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+.tabbar{background:var(--card);border-top:1px solid var(--border);display:flex;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 1px;cursor:pointer;color:var(--gray);background:none;border:none;font-family:'DM Sans',sans-serif;transition:color 0.15s}
+.tab-btn svg{width:18px;height:18px;margin-bottom:2px}
+.tab-btn span{font-size:9px;font-weight:600}
+.tab-btn.active{color:var(--cyan)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:0.5px}
+.form-input{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:10px 12px}
+.form-row{display:flex;gap:8px}
+.seg-ctrl{display:flex;background:var(--card2);border-radius:10px;padding:3px;gap:3px}
+.seg-btn{flex:1;text-align:center;padding:7px 4px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--text2);border:none;background:none;font-family:'DM Sans',sans-serif}
+.seg-btn.active{background:var(--card);color:var(--text)}
+.modal-actions{display:flex;gap:8px;margin-top:16px}
+.btn-primary{flex:1;background:var(--cyan);color:#000;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+.btn-cancel{background:var(--card2);color:var(--text2);border:none;border-radius:12px;padding:14px 20px;font-family:'DM Sans',sans-serif;font-size:15px;cursor:pointer}
+.news-item{padding:12px 0;border-top:1px solid var(--border);cursor:pointer}
+.news-source{font-size:10px;color:var(--cyan);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.news-headline{font-size:14px;font-weight:500;line-height:1.4}
+.news-time{font-size:11px;color:var(--text2);margin-top:4px}
+.empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.tab-content{display:none}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header">
+  <div class="header-top">
+    <div class="header-title">MrtOlc</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="currency-toggle active" id="usdBtn" onclick="setCurrency('USD')">$ USD</button>
+      <button class="currency-toggle" id="tryBtn" onclick="setCurrency('TRY')">₺ TRY</button>
+    </div>
+  </div>
+  <div class="market-bar">
+    <div class="market-status">
+      <div class="market-dot" id="marketDot"></div>
+      <span id="marketStatus" style="font-size:12px">--</span>
+      <span class="market-countdown" id="marketCountdown"></span>
+    </div>
+    <div class="fx-rate" id="fxRate">1 USD = -- TRY</div>
+  </div>
+</div>
+
+<div class="scroll" id="mainScroll">
+
+<!-- SUMMARY -->
+<div class="tab-content active" id="tab-summary">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">Total Portfolio</div>
+    <div class="metrics-grid">
+      <div class="metric metric-full">
+        <div class="metric-label">Total Value</div>
+        <div class="metric-value big cyan" id="s-total">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Daily P/L</div>
+        <div class="metric-value" id="s-daily">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total P/L</div>
+        <div class="metric-value" id="s-gain">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Monthly Dividend</div>
+        <div class="metric-value gold" id="s-mdiv">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Annual Estimate</div>
+        <div class="metric-value gold" id="s-ydiv">--</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Accounts</div>
+    <div class="metrics-grid">
+      <div class="metric">
+        <div class="metric-label">🟢 Fidelity</div>
+        <div class="metric-value cyan" id="s-fid-total">--</div>
+        <div class="metric-value" id="s-fid-gain" style="font-size:14px;margin-top:2px">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">🔵 Chase</div>
+        <div class="metric-value cyan" id="s-cha-total">--</div>
+        <div class="metric-value" id="s-cha-gain" style="font-size:14px;margin-top:2px">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">✨ Metal</div>
+        <div class="metric-value cyan" id="s-met-total">--</div>
+        <div class="metric-value" id="s-met-gain" style="font-size:14px;margin-top:2px">--</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">💰 Dividend</div>
+        <div class="metric-value gold" id="s-div-total">--</div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 12px;margin-bottom:16px">
+    <button class="add-btn" style="width:100%;justify-content:center" onclick="openTxModal()">+ Add Transaction</button>
+  </div>
+</div>
+
+<!-- FIDELITY -->
+<div class="tab-content" id="tab-fidelity">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">Fidelity</div>
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-label">Daily P/L</div><div class="metric-value" id="f-daily">--</div></div>
+      <div class="metric"><div class="metric-label">Cash</div><div class="metric-value cyan" id="f-cash">--</div></div>
+      <div class="metric"><div class="metric-label">Total Value</div><div class="metric-value cyan" id="f-total">--</div></div>
+      <div class="metric"><div class="metric-label">Total P/L</div><div class="metric-value" id="f-gain">--</div></div>
+      <div class="metric"><div class="metric-label">Monthly Dividend</div><div class="metric-value gold" id="f-mdiv">--</div></div>
+      <div class="metric"><div class="metric-label">Annual Estimate</div><div class="metric-value gold" id="f-ydiv">--</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Positions</div>
+    <table class="pos-table">
+      <thead><tr><th>Symbol</th><th>Shares</th><th>Avg</th><th>Price</th><th>P/L</th></tr></thead>
+      <tbody id="fid-positions"><tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Loading...</td></tr></tbody>
+    </table>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- CHASE -->
+<div class="tab-content" id="tab-chase">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">Chase</div>
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-label">Daily P/L</div><div class="metric-value" id="c-daily">--</div></div>
+      <div class="metric"><div class="metric-label">Cash</div><div class="metric-value cyan" id="c-cash">--</div></div>
+      <div class="metric"><div class="metric-label">Total Value</div><div class="metric-value cyan" id="c-total">--</div></div>
+      <div class="metric"><div class="metric-label">Total P/L</div><div class="metric-value" id="c-gain">--</div></div>
+      <div class="metric"><div class="metric-label">Monthly Dividend</div><div class="metric-value gold" id="c-mdiv">--</div></div>
+      <div class="metric"><div class="metric-label">Annual Estimate</div><div class="metric-value gold" id="c-ydiv">--</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Positions</div>
+    <table class="pos-table">
+      <thead><tr><th>Symbol</th><th>Shares</th><th>Avg</th><th>Price</th><th>P/L</th></tr></thead>
+      <tbody id="cha-positions"><tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Loading...</td></tr></tbody>
+    </table>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- METAL -->
+<div class="tab-content" id="tab-metal">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">Metal</div>
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-label">Daily P/L</div><div class="metric-value" id="m-daily">--</div></div>
+      <div class="metric"><div class="metric-label">Total Value</div><div class="metric-value cyan" id="m-total">--</div></div>
+      <div class="metric metric-full"><div class="metric-label">Total P/L</div><div class="metric-value" id="m-gain">--</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Positions</div>
+    <table class="pos-table">
+      <thead><tr><th>Asset</th><th>Amount</th><th>Avg</th><th>Price</th><th>P/L</th></tr></thead>
+      <tbody id="met-positions"><tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">Loading...</td></tr></tbody>
+    </table>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- TEMETTU -->
+<div class="tab-content" id="tab-temettu">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">Dividend Summary</div>
+    <div class="metrics-grid">
+      <div class="metric"><div class="metric-label">All Time</div><div class="metric-value gold" id="div-total">--</div></div>
+      <div class="metric"><div class="metric-label">This Year</div><div class="metric-value gold" id="div-year">--</div></div>
+      <div class="metric"><div class="metric-label">Monthly Est.</div><div class="metric-value gold" id="div-monthly">--</div></div>
+      <div class="metric"><div class="metric-label">Annual Est.</div><div class="metric-value gold" id="div-annual">--</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">History</div>
+    <div id="div-list"><div class="empty"><div class="empty-icon">💰</div>No dividend records yet</div></div>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- HISTORY -->
+<div class="tab-content" id="tab-history">
+  <div style="height:12px"></div>
+  <div class="card" style="padding-bottom:6px">
+    <div class="tx-filters">
+      <div class="tx-filter active" onclick="filterTx('all',this)">All</div>
+      <div class="tx-filter" onclick="filterTx('buy',this)">📈 Buy</div>
+      <div class="tx-filter" onclick="filterTx('sell',this)">📉 Sell</div>
+      <div class="tx-filter" onclick="filterTx('dividend',this)">💰 Dividend</div>
+    </div>
+    <div id="tx-list"><div class="empty"><div class="empty-icon">📋</div>Connect Google Sheets to see transactions</div></div>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- NEWS -->
+<div class="tab-content" id="tab-news">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">Market News</div>
+    <div id="news-list"><div class="empty"><div class="empty-icon">📰</div>Loading news...</div></div>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- WATCHLIST -->
+<div class="tab-content" id="tab-watchlist">
+  <div style="height:12px"></div>
+  <div style="padding:0 12px;margin-bottom:10px">
+    <button class="add-btn" style="width:100%;justify-content:center" onclick="openWlModal()">+ Add to Watchlist</button>
+  </div>
+  <div class="card">
+    <div id="wl-list"><div class="empty"><div class="empty-icon">👁</div>No stocks in watchlist yet</div></div>
+  </div>
+  <div style="height:12px"></div>
+</div>
+
+<!-- SETTINGS -->
+<div class="tab-content" id="tab-settings">
+  <div style="height:12px"></div>
+  <div class="card">
+    <div class="card-title">App Info</div>
+    <div style="color:var(--text2);font-size:14px;line-height:2">
+      <div>Version 1.0.0</div>
+      <div>Data Source: Finnhub</div>
+      <div>Sheets: <span style="color:var(--green)" id="sheets-status">Connecting...</span></div>
+      <div>Last Sync: <span id="last-sync">--</span></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- TAB BAR -->
+<div class="tabbar">
+  <button class="tab-btn active" onclick="switchTab('summary',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    <span>Summary</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('fidelity',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    <span>Fidelity</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('chase',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+    <span>Chase</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('metal',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.34 8-7 8-11.5C20 5.81 16.19 2 11.5 2zm1 14.5h-2v-2h2v2zm0-4h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z"/></svg>
+    <span>Metal</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('temettu',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+    <span>Temettu</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('history',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+    <span>History</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('news',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+    <span>News</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('watchlist',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+    <span>Watch</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('settings',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+    <span>Settings</span>
+  </button>
+</div>
+</div>
+
+<!-- TX MODAL -->
+<div class="modal-overlay" id="txModal">
+  <div class="modal">
+    <div class="modal-title">Add Transaction</div>
+    <div class="form-group">
+      <label class="form-label">Type</label>
+      <div class="seg-ctrl" id="tx-type-ctrl">
+        <button class="seg-btn active" onclick="setTxType('buy',this)">📈 Buy</button>
+        <button class="seg-btn" onclick="setTxType('sell',this)">📉 Sell</button>
+        <button class="seg-btn" onclick="setTxType('dividend',this)">💰 Dividend</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Account</label>
+      <div class="seg-ctrl" id="tx-acct-ctrl">
+        <button class="seg-btn active" onclick="setTxAcct('Fidelity',this)">Fidelity</button>
+        <button class="seg-btn" onclick="setTxAcct('Chase',this)">Chase</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1"><label class="form-label">Symbol</label><input class="form-input" id="tx-symbol" placeholder="AAPL" style="text-transform:uppercase"></div>
+      <div class="form-group" style="flex:1"><label class="form-label">Date</label><input class="form-input" id="tx-date" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="flex:1"><label class="form-label">Shares</label><input class="form-input" id="tx-shares" type="number" placeholder="0" step="0.001" oninput="calcTxTotal()"></div>
+      <div class="form-group" style="flex:1"><label class="form-label">Price ($)</label><input class="form-input" id="tx-price" type="number" placeholder="0.00" step="0.01" oninput="calcTxTotal()"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Total</label>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:700;color:var(--cyan);padding:8px 0" id="tx-total">$0.00</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTxModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveTx()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- WL MODAL -->
+<div class="modal-overlay" id="wlModal">
+  <div class="modal">
+    <div class="modal-title">Add to Watchlist</div>
+    <div class="form-group"><label class="form-label">Symbol</label><input class="form-input" id="wl-symbol" placeholder="AAPL" style="text-transform:uppercase"></div>
+    <div class="form-group"><label class="form-label">Note (optional)</label><input class="form-input" id="wl-note" placeholder="e.g. Watching for breakout"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeWlModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveWl()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbz1S3gg4n7ghtsWzUwgcxWzOEdpu6ecdkz2aLRW2xNv_yzrI58FmqD_dV1dMygWzUpTrg/exec';
+const FINNHUB_KEY='d0okbdhr01qhup09k1l0d0okbdhr01qhup09k1lg';
+let DATA={},PRICES={},FX=1,CURRENCY='USD';
+let watchlist=JSON.parse(localStorage.getItem('watchlist')||'[]');
+let transactions=[],txType='buy',txAcct='Fidelity';
+
+function fmt(n,dec=2){if(n===undefined||n===null||isNaN(n))return'--';const v=Math.abs(n);let s;if(v>=1e9)s=(n/1e9).toFixed(1)+'B';else if(v>=1e6)s=(n/1e6).toFixed(2)+'M';else s=n.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');return s}
+function usd(n){if(n===undefined||n===null||isNaN(n))return'--';const v=n*(CURRENCY==='TRY'?FX:1);const sym=CURRENCY==='TRY'?'₺':'$';return sym+fmt(v)}
+function sign(n){return n>=0?'+$'+fmt(n):'−$'+fmt(Math.abs(n))}
+function setGain(id,n){const el=document.getElementById(id);if(!el)return;el.textContent=sign(n*(CURRENCY==='TRY'?FX:1));el.className='metric-value '+(n>=0?'pos':'neg')}
+
+function setCurrency(c){CURRENCY=c;document.getElementById('usdBtn').className='currency-toggle'+(c==='USD'?' active':'');document.getElementById('tryBtn').className='currency-toggle'+(c==='TRY'?' active':'');renderAll()}
+
+function switchTab(name,btn){document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+name).classList.add('active');btn.classList.add('active');document.getElementById('mainScroll').scrollTop=0;if(name==='news')loadNews();if(name==='watchlist')renderWatchlist()}
+
+function updateMarketClock(){const now=new Date();const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));const h=et.getHours(),m=et.getMinutes(),d=et.getDay();const isWeekday=d>=1&&d<=5;const openMin=9*60+30,closeMin=16*60,curMin=h*60+m;const isOpen=isWeekday&&curMin>=openMin&&curMin<closeMin;document.getElementById('marketDot').className='market-dot'+(isOpen?'':' closed');document.getElementById('marketStatus').textContent=isOpen?'Market Open':'Market Closed';if(isOpen){const rem=closeMin-curMin;document.getElementById('marketCountdown').textContent=`Closes ${Math.floor(rem/60)}h ${rem%60}m`}else if(isWeekday&&curMin<openMin){const rem=openMin-curMin;document.getElementById('marketCountdown').textContent=`Opens ${Math.floor(rem/60)}h ${rem%60}m`}else{document.getElementById('marketCountdown').textContent=''}}
+
+async function loadFX(){try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=USDTRY&token=${FINNHUB_KEY}`);const d=await r.json();if(d.c&&d.c>1){FX=d.c;document.getElementById('fxRate').textContent=`1 USD = ${FX.toFixed(2)} TRY`}}catch(e){}}
+
+async function loadSheets(){try{const r=await fetch(APPS_SCRIPT_URL+'?action=summary');const d=await r.json();if(d.success){DATA=d.data;document.getElementById('sheets-status').textContent='Connected ✓';document.getElementById('sheets-status').style.color='var(--green)';document.getElementById('last-sync').textContent=new Date().toLocaleString();await loadPrices();renderAll()}}catch(e){document.getElementById('sheets-status').textContent='Error';document.getElementById('sheets-status').style.color='var(--red)'}}
+
+async function loadPrices(){const syms=new Set();(DATA.fidPositions||[]).forEach(p=>syms.add(p.symbol));(DATA.chaPositions||[]).forEach(p=>syms.add(p.symbol));watchlist.forEach(w=>syms.add(w.symbol));await Promise.all([...syms].map(async s=>{try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${s}&token=${FINNHUB_KEY}`);PRICES[s]=await r.json()}catch(e){}}))}
+
+function renderAll(){renderSummary();renderFidelity();renderChase();renderMetal();renderDividend();renderHistory()}
+
+function renderSummary(){const fidT=DATA.fidelityTotal||0,fidG=DATA.fidelityGain||0,chaT=DATA.chaseTotal||0,chaG=DATA.chaseGain||0,metT=DATA.metalTotal||0,metG=DATA.metalGain||0;const total=fidT+chaT+metT,totalG=fidG+chaG+metG;let dailyPL=0;[...(DATA.fidPositions||[]),...(DATA.chaPositions||[])].forEach(p=>{const q=PRICES[p.symbol];if(q&&q.d)dailyPL+=q.d*p.shares});const mdiv=(DATA.fidelityMonthlyDiv||0)+(DATA.chaseMonthlyDiv||0);document.getElementById('s-total').textContent=usd(total);setGain('s-daily',dailyPL);setGain('s-gain',totalG);document.getElementById('s-mdiv').textContent=usd(mdiv);document.getElementById('s-ydiv').textContent=usd(mdiv*12);document.getElementById('s-fid-total').textContent=usd(fidT);setGain('s-fid-gain',fidG);document.getElementById('s-cha-total').textContent=usd(chaT);setGain('s-cha-gain',chaG);document.getElementById('s-met-total').textContent=usd(metT);setGain('s-met-gain',metG);document.getElementById('s-div-total').textContent=usd(DATA.dividendTotal||0)}
+
+function renderPositions(positions,tbodyId){const tbody=document.getElementById(tbodyId);if(!positions||!positions.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:20px">No positions</td></tr>';return 0}let dailyPL=0,html='';positions.forEach(p=>{const q=PRICES[p.symbol]||{};const price=q.c||0;const pl=price?(price-p.avgPrice)*p.shares:0;const plPct=p.avgPrice?((price-p.avgPrice)/p.avgPrice*100):0;dailyPL+=(q.d||0)*p.shares;const pc=pl>=0?'var(--green)':'var(--red)';html+=`<tr><td><div>${p.symbol}</div><div class="sub">${fmt(p.shares,4)} sh</div></td><td>${fmt(p.shares,2)}</td><td>$${fmt(p.avgPrice)}</td><td>${price?'$'+fmt(price):'--'}<div class="sub" style="color:${(q.dp||0)>=0?'var(--green)':'var(--red)'}">${q.dp?((q.dp>=0?'+':'')+q.dp.toFixed(2)+'%'):'--'}</div></td><td style="color:${pc}">${pl?sign(pl):'--'}<div class="sub" style="color:${pc}">${plPct?(plPct>=0?'+':'')+plPct.toFixed(1)+'%':''}</div></td></tr>`});tbody.innerHTML=html;return dailyPL}
+
+function renderFidelity(){const daily=renderPositions(DATA.fidPositions,'fid-positions')||0;document.getElementById('f-total').textContent=usd(DATA.fidelityTotal||0);document.getElementById('f-cash').textContent=usd(DATA.fidCash||0);setGain('f-daily',daily);setGain('f-gain',DATA.fidelityGain||0);document.getElementById('f-mdiv').textContent=usd(DATA.fidelityMonthlyDiv||0);document.getElementById('f-ydiv').textContent=usd((DATA.fidelityMonthlyDiv||0)*12)}
+
+function renderChase(){const daily=renderPositions(DATA.chaPositions,'cha-positions')||0;document.getElementById('c-total').textContent=usd(DATA.chaseTotal||0);document.getElementById('c-cash').textContent=usd(DATA.chaCash||0);setGain('c-daily',daily);setGain('c-gain',DATA.chaseGain||0);document.getElementById('c-mdiv').textContent=usd(DATA.chaseMonthlyDiv||0);document.getElementById('c-ydiv').textContent=usd((DATA.chaseMonthlyDiv||0)*12)}
+
+function renderMetal(){renderPositions(DATA.metPositions||[],'met-positions');document.getElementById('m-total').textContent=usd(DATA.metalTotal||0);setGain('m-gain',DATA.metalGain||0);setGain('m-daily',DATA.metalDailyPL||0)}
+
+function renderDividend(){document.getElementById('div-total').textContent=usd(DATA.dividendTotal||0);document.getElementById('div-year').textContent=usd(DATA.dividendYear||0);const mdiv=(DATA.fidelityMonthlyDiv||0)+(DATA.chaseMonthlyDiv||0);document.getElementById('div-monthly').textContent=usd(mdiv);document.getElementById('div-annual').textContent=usd(mdiv*12)}
+
+function renderHistory(){transactions=DATA.transactions||[];renderTxList('all')}
+
+function renderTxList(filter){const list=document.getElementById('tx-list');const txs=filter==='all'?transactions:transactions.filter(t=>t.type===filter);if(!txs.length){list.innerHTML='<div class="empty"><div class="empty-icon">📋</div>No transactions</div>';return}list.innerHTML=txs.map(t=>`<div class="tx-item"><div><div style="display:flex;align-items:center;gap:6px"><span class="tx-symbol">${t.symbol}</span><span class="badge ${t.type}">${t.type==='buy'?'BUY':t.type==='sell'?'SELL':'DIV'}</span></div><div class="tx-meta">${t.date} · ${t.account}</div></div><div style="text-align:right"><div class="tx-amount">$${fmt(t.total)}</div><div class="tx-shares">${t.shares} sh @ $${fmt(t.price)}</div></div></div>`).join('')}
+
+function filterTx(f,btn){document.querySelectorAll('.tx-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTxList(f)}
+
+function renderWatchlist(){const list=document.getElementById('wl-list');if(!watchlist.length){list.innerHTML='<div class="empty"><div class="empty-icon">👁</div>No stocks in watchlist yet</div>';return}list.innerHTML=watchlist.map(w=>{const q=PRICES[w.symbol]||{};const price=q.c?'$'+fmt(q.c):'--';const ch=q.dp?((q.dp>=0?'+':'')+q.dp.toFixed(2)+'%'):'--';const cc=(q.dp||0)>=0?'var(--green)':'var(--red)';return`<div class="wl-item"><div><div class="wl-symbol">${w.symbol}</div>${w.note?`<div class="wl-note">${w.note}</div>`:''}</div><div style="text-align:right"><div class="wl-price">${price}</div><div style="font-size:12px;color:${cc}">${ch}</div></div></div>`}).join('')}
+
+function openWlModal(){document.getElementById('wlModal').classList.add('open')}
+function closeWlModal(){document.getElementById('wlModal').classList.remove('open')}
+async function saveWl(){const sym=document.getElementById('wl-symbol').value.toUpperCase().trim();if(!sym)return;const note=document.getElementById('wl-note').value.trim();watchlist.push({symbol:sym,note});localStorage.setItem('watchlist',JSON.stringify(watchlist));closeWlModal();document.getElementById('wl-symbol').value='';document.getElementById('wl-note').value='';try{const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${FINNHUB_KEY}`);PRICES[sym]=await r.json()}catch(e){}renderWatchlist()}
+
+function openTxModal(){document.getElementById('tx-date').value=new Date().toISOString().split('T')[0];document.getElementById('txModal').classList.add('open')}
+function closeTxModal(){document.getElementById('txModal').classList.remove('open')}
+function setTxType(t,btn){txType=t;document.querySelectorAll('#tx-type-ctrl .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function setTxAcct(a,btn){txAcct=a;document.querySelectorAll('#tx-acct-ctrl .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function calcTxTotal(){const sh=parseFloat(document.getElementById('tx-shares').value)||0;const pr=parseFloat(document.getElementById('tx-price').value)||0;document.getElementById('tx-total').textContent='$'+fmt(sh*pr)}
+async function saveTx(){const sym=document.getElementById('tx-symbol').value.toUpperCase().trim();const date=document.getElementById('tx-date').value;const shares=parseFloat(document.getElementById('tx-shares').value)||0;const price=parseFloat(document.getElementById('tx-price').value)||0;if(!sym||!shares||!price)return alert('Fill all fields');try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({sheet:'Transactions',row:[date,txType,txAcct,sym,shares,price,shares*price]})})}catch(e){}closeTxModal();loadSheets()}
+
+async function loadNews(){const list=document.getElementById('news-list');list.innerHTML='<div class="empty">Loading...</div>';try{const r=await fetch(`https://finnhub.io/api/v1/news?category=general&token=${FINNHUB_KEY}`);const items=await r.json();list.innerHTML=items.slice(0,20).map(n=>`<div class="news-item" onclick="window.open('${n.url}','_blank')"><div class="news-source">${n.source}</div><div class="news-headline">${n.headline}</div><div class="news-time">${new Date(n.datetime*1000).toLocaleString()}</div></div>`).join('')}catch(e){list.innerHTML='<div class="empty">Failed to load news</div>'}}
+
+updateMarketClock();
+setInterval(updateMarketClock,30000);
+loadFX();
+loadSheets();
+setInterval(loadSheets,60000);
+</script>
+</body>
+</html>
